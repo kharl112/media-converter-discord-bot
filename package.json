@@ -1,0 +1,31 @@
+{
+  "name": "media-converter-discord-bot",
+  "version": "0.0.1",
+  "description": "converts links into media (img, videos etc..)",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup src/index.ts --minify"
+  },
+  "keywords": [
+    "media",
+    "converter",
+    "discord",
+    "bot",
+    "mp4",
+    "img"
+  ],
+  "author": "kharl112",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
