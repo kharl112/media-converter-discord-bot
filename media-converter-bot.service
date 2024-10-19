@@ -1,0 +1,9 @@
+[Unit]
+Description=Media converter bot for discord
+After=network.target
+                                                                                                                                                                                            [Service]
+ExecStart=/usr/bin/node /apps/media-converter-bot/dist/index.js
+WorkingDirectory=/apps/media-converter-bot
+
+[Install]
+WantedBy=multi-user.target
