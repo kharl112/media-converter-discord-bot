@@ -8,7 +8,7 @@ export interface FileMetaData {
   url: string,
 }
 
-export const get_fb_video_url = async (link: string): FileMetaData => {
+export const get_fb_video_url = async (link: string): FileMetaData  | null => {
 
   //proper header for fb videos
   const headers = {
