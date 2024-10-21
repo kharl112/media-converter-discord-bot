@@ -7,102 +7,73 @@ const { DISCORD_TOKEN, DISCORD_CLIENT_ID } = process.env;
 //discord apis
 import { Client, GatewayIntentBits, Collection, Intents, AttachmentBuilder } from "discord.js"
 
-import axios from "axios";
-
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
-
 import fs from "node:fs";
-
 import https from "https";
+import crypto from "crypto";
 
-client.once('ready', (client) => {
-  console.log(`${client.user.tag} has ressurected.`);
-});
+import { get_fb_video_url, FileMetaData } from "./http/get_videos";
 
-client.on('messageCreate', (message)  => {
-  const content = message.content;
-
-  //check if link is in fb
-  if (['facebook.com', 'fb.watch'].every((item) => !content.includes(item))) return;
-
+client.on('messageCreate', async (message)  => {
+  const content: string  = message.content;
 
   //get the link from the message content
   const link = content.match(/(https?:\/\/[^\s]+)/);
   if(!link.length) return;
 
-  //proper header for fb videos
-  const headers = {
-    "sec-fetch-user": "?1",
-    "sec-ch-ua-mobile": "?0",
-    "sec-fetch-site": "none",
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "cache-control": "max-age=0",
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-    "authority": "www.facebook.com",
-    "upgrade-insecure-requests": "1",
-    "accept-language": "en-GB,en;q=0.9,tr-TR;q=0.8,tr;q=0.7,en-US;q=0.6",
-    "sec-ch-ua": '"Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
-    "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+
+  let metadata: FileMetaData | null = null;
+
+  //get the metdata 
+  //FACEBOOK LINKS 
+  if (['facebook.com', 'fb.watch'].some((item) => content.includes(item))) {
+    //get the proper video link
+    metadata = await get_fb_video_url(link[0]);
   }
 
 
-  axios.get(link[0], { headers }).then( async ({ data }) => {
-  
-    //sd source of the video
-    const matches = data.match(/"browser_native_sd_url":"(.*?)"/) || data.match(/"playable_url":"(.*?)"/) || data.match(/sd_src\s*:\s*"([^"]*)"/) || data.match(/(?<="src":")[^"]*(https:\/\/[^"]*)/);
+  //ignore if theres no url processed
+  if(!metadata) return;
 
-    if(matches.length > 1) {
+  //create TMP FILE in /tmp directory
+  const hash: string = crypto.createHash('md5').update(metadata.url).digest('hex');
+  const TMP_FILE_PATH: string = '/tmp/' + hash + '.' + metadata.ext;
+  const tempFile = fs.createWriteStream(TMP_FILE_PATH);
 
-      //create temp file
-      const TMP_FILE_PATH = '/tmp/tmp_fb.mp4';
-      const tempFile = fs.createWriteStream(TMP_FILE_PATH);
+  //process the vidoe url 
+  https.get(metadata.url, (response) => {
 
-      //hack, url is in escape format - need to parse it using JSON.parse
-      const videoUrl = JSON.parse(`{ "url": "${matches[1]}" }`);
+    //apply the stream into the tempFile
+    var stream = response.pipe(tempFile);
 
-      try {
+    stream.on('finish', async () => {
+      //read the temp file after finish reading
+      const videoOutput = fs.readFileSync(TMP_FILE_PATH);
 
-        const response = await axios.head(videoUrl.url);
-        const contentLength: string | number = response.headers['content-length'];
-        const contentType: string = response.headers['content-type'];
+      //send it to discord as attachment
+      await message.reply({ files: [new AttachmentBuilder(videoOutput, { name: 'video.mp4' } )] });
 
-        //check if it's a video
-        if(!contentType.startsWith('video/')) return;
+      //remove the tmp file
+      fs.unlinkSync(TMP_FILE_PATH);
+    });
 
-        //ignore if the video is greater than 35mb
-        if(parseInt(contentLength, 10) >  35 * 1024 * 1024) return; 
+    //debug on error
+    stream.on('error', (error) => {
+      console.log(error);
 
+      //remove the tmp file
+      fs.unlinkSync(TMP_FILE_PATH);
+    });
 
-
-        //process the vidoe url 
-        https.get(videoUrl.url, (response) => {
-
-          //apply the stream into the tempFile
-          var stream = response.pipe(tempFile);
-
-          stream.on('finish', async () => {
-            //read the temp file after finish reading
-            const videoOutput = fs.readFileSync(TMP_FILE_PATH);
-
-            //send it to discord as attachment
-            await message.reply({ files: [new AttachmentBuilder(videoOutput, { name: 'video.mp4' } )] });
-          });
-
-          //debug on error
-          stream.on('error', (error) => {
-            console.log(error);
-          });
-
-        });
-
-        
-      } catch(error) {
-        console.log(error);
-      }
-    }
   });
+
+});
+
+
+//event when bot is ready
+client.once('ready', (client) => {
+  console.log(`${client.user.tag} has ressurected.`);
 });
 
 client.login(DISCORD_TOKEN);
