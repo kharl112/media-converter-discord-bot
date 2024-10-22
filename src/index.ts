@@ -16,12 +16,14 @@ import crypto from "crypto";
 import { get_fb_video_url, FileMetaData } from "./http/get_videos";
 
 client.on('messageCreate', async (message)  => {
-  const content: string  = message.content;
+  const content: string | null  = message.content;
 
+  //some returns embed and no content
+  if(!content) return
+  
   //get the link from the message content
   const link = content.match(/(https?:\/\/[^\s]+)/);
   if(!link.length) return;
-
 
   let metadata: FileMetaData | null = null;
 
