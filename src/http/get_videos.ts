@@ -32,8 +32,10 @@ export const get_fb_video_url = async (link: string): FileMetaData  | null => {
     const data: string = link_response.data;
 
     //get the sd:video link from the
-    const matches: Array<string> = data.match(/"browser_native_sd_url":"(.*?)"/) || data.match(/"playable_url":"(.*?)"/) || 
+    const matches: Array<string> | null = data.match(/"browser_native_sd_url":"(.*?)"/) || data.match(/"playable_url":"(.*?)"/) || 
       data.match(/sd_src\s*:\s*"([^"]*)"/) || data.match(/(?<="src":")[^"]*(https:\/\/[^"]*)/);
+
+    if(!matches) return null;
 
     //we need index matches[2] to get the proper video link
     if(matches.length < 2) return null;
