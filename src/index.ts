@@ -19,10 +19,14 @@ client.on('messageCreate', async (message)  => {
   const content: string | null  = message.content;
 
   //some returns embed and no content
-  if(!content) return
+  if(!content) return;
   
   //get the link from the message content
-  const link = content.match(/(https?:\/\/[^\s]+)/);
+  const link: Array<string> | null = content.match(/(https?:\/\/[^\s]+)/);
+
+  //match sometimes returns null
+  if(!link) return;
+
   if(!link.length) return;
 
   let metadata: FileMetaData | null = null;
