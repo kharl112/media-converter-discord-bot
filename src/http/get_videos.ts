@@ -49,13 +49,13 @@ export const get_fb_video_url = async (link: string): FileMetaData  | null => {
 
     //check if it's a video
     if(!contentType.startsWith('video/')){
-      error_log(`ERROR: ${videoUrl}: is not a video`);
+      console.log(`ERROR: ${videoUrl}: is not a video`);
       return null;
     } 
 
     //ignore if the video is greater than 35mb
     if(parseInt(contentLength, 10) >  35 * 1024 * 1024) {
-      error_log(`ERROR: ${videoUrl}: video is too large`);
+      console.log(`ERROR: ${videoUrl}: video is too large`);
       return null; 
     } 
 
