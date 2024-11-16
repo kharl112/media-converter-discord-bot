@@ -1,7 +1,9 @@
 [Unit]
 Description=Media converter bot for discord
 After=network.target
-                                                                                                                                                                                            [Service]
+
+[Service]
+ExecStartPre=/bin/sleep 5
 ExecStart=/usr/bin/node /apps/media-converter-discord-bot/dist/index.js
 WorkingDirectory=/apps/media-converter-discord-bot
 
